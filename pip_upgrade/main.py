@@ -6,6 +6,9 @@ from typing import List, Dict, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from packaging import version
 import time
+import logging
+from datetime import datetime
+import os
 
 class PipUpgrader:
     def __init__(self, skip_packages: List[str] = None, concurrent: bool = True, 
@@ -109,46 +112,91 @@ def parse_args():
     parser.add_argument("--no-concurrent", action="store_true", help="Disable concurrent upgrades")
     parser.add_argument("--workers", "-w", type=int, default=5, help="Number of concurrent workers")
     parser.add_argument("--max-version", "-m", type=str, help="Maximum version to upgrade to (e.g. 2.0.0)")
+    parser.add_argument("--log", "-l", help="Path to log file")
+    parser.add_argument("--report", "-r", help="Path to save upgrade report")
     return parser.parse_args()
+
+def setup_logging(log_path: str = None):
+    """Setup logging configuration"""
+    if log_path:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_path),
+                logging.StreamHandler()
+            ]
+        )
+    else:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
+
+def generate_report(successful: List[str], failed: List[Tuple[str, str]], 
+                   total_time: float, report_path: str):
+    """Generate and save upgrade report"""
+    report = [
+        "=== Pip Upgrade Report ===",
+        f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Total time: {total_time:.1f}s\n",
+        f"Successfully upgraded ({len(successful)}):",
+        *[f"  • {pkg}" for pkg in successful],
+        f"\nFailed upgrades ({len(failed)}):",
+        *[f"  • {pkg}: {error}" for pkg, error in failed]
+    ]
+    
+    with open(report_path, 'w') as f:
+        f.write('\n'.join(report))
 
 def main():
     """Main function to upgrade all outdated packages."""
     args = parse_args()
     
+    # Setup logging if specified
+    setup_logging(args.log)
+    
     upgrader = PipUpgrader(
         skip_packages=args.skip,
         concurrent=not args.no_concurrent,
-        max_workers=args.workers
+        max_workers=args.workers,
+        timeout=300  
     )
 
-    print("🔍 Checking for outdated packages...")
+    logging.info("Checking for outdated packages...")
     outdated = upgrader.get_outdated_packages()
     
     if not outdated:
-        print("✨ All packages are up to date!")
+        logging.info("✨ All packages are up to date!")
         return
     
-    print(f"\n📦 Found {len(outdated)} outdated package(s):")
+    logging.info(f"\n📦 Found {len(outdated)} outdated package(s):")
     for pkg in outdated:
-        print(f"  • {pkg['name']}: {pkg['version']} → {pkg['latest_version']}")
+        logging.info(f"  • {pkg['name']}: {pkg['version']} → {pkg['latest_version']}")
     
-    print("\n🚀 Starting upgrade process...")
+    logging.info("\n🚀 Starting upgrade process...")
     start_time = time.time()
     successful, failed = upgrader.upgrade_all_packages(outdated)
     total_time = time.time() - start_time
 
-    print(f"\n📊 Upgrade Summary (completed in {total_time:.1f}s):")
-    print(f"✓ Successfully upgraded: {len(successful)} package(s)")
+    # Generate report if path specified
+    if args.report:
+        generate_report(successful, failed, total_time, args.report)
+        logging.info(f"\n📝 Report saved to: {args.report}")
+
+    # Print summary
+    logging.info(f"\n📊 Upgrade Summary (completed in {total_time:.1f}s):")
+    logging.info(f"✓ Successfully upgraded: {len(successful)} package(s)")
     if successful:
-        print("  Successfully upgraded packages:")
+        logging.info("  Successfully upgraded packages:")
         for pkg in successful:
-            print(f"  • {pkg}")
+            logging.info(f"  • {pkg}")
 
     if failed:
-        print(f"\n✗ Failed to upgrade: {len(failed)} package(s)")
-        print("  Failed packages:")
+        logging.info(f"\n✗ Failed to upgrade: {len(failed)} package(s)")
+        logging.info("  Failed packages:")
         for pkg, error in failed:
-            print(f"  • {pkg}: {error}")
+            logging.info(f"  • {pkg}: {error}")
 
 if __name__ == "__main__":
     main() 

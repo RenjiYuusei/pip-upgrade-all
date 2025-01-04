@@ -30,6 +30,12 @@ pip-upgrade --workers 3
 
 # Specify the maximum version to upgrade to
 pip-upgrade --max-version 2.0.0
+
+# Save upgrade report to a file
+pip-upgrade --report report.txt
+
+# Save logs to a file
+pip-upgrade --log log.txt
 ```
 
 ## Features
@@ -38,7 +44,8 @@ pip-upgrade --max-version 2.0.0
 - ⚡ Upgrade multiple packages concurrently (default)
 - 🎯 Skip specific packages
 - 📊 Display progress and summary details
-- ⏱️ Track upgrade time
+- 📝 Generate detailed upgrade reports
+- 📋 Save logs to file
 - 🛡️ Handle errors and dependencies safely
 - 🎨 Command line interface with emoji
 
@@ -54,6 +61,8 @@ pip-upgrade --max-version 2.0.0
 --no-concurrent    Disable concurrent upgrade
 --workers, -w      Number of workers for concurrent upgrade (default: 5)
 --max-version, -m  Maximum version to upgrade to (e.g. 2.0.0)
+--log, -l          Path to log file
+--report, -r       Path to save upgrade report
 ```
 
 ## License
