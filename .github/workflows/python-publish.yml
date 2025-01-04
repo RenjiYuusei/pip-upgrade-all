@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'  # Push events to matching v*, i.e. v1.0, v20.15.10
+  workflow_dispatch:
 
 jobs:
   build:
@@ -31,16 +32,14 @@ jobs:
 
   publish-to-pypi:
     name: Publish Python 🐍 distribution 📦 to PyPI
-    if: startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
+    if: startsWith(github.ref, 'refs/tags/')
     needs:
     - build
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/p/pip-upgrade
-    permissions:
-      id-token: write
-
+    
     steps:
     - name: Download all the dists
       uses: actions/download-artifact@v4
@@ -49,6 +48,9 @@ jobs:
         path: dist/
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        verbose: true
 
   github-release:
     name: >-
