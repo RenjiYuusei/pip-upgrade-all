@@ -12,7 +12,7 @@ import os
 
 class PipUpgrader:
     def __init__(self, skip_packages: List[str] = None, concurrent: bool = True, 
-                 max_workers: int = 5, timeout: int = 300):
+                 max_workers: int = 5, timeout: int = 300, max_version: str = None):
         """
         Initialize PipUpgrader
         
@@ -21,11 +21,13 @@ class PipUpgrader:
             concurrent: Whether to use concurrent upgrades
             max_workers: Maximum number of concurrent upgrades
             timeout: Timeout in seconds for each package upgrade
+            max_version: Maximum version to upgrade to (e.g. 2.0.0)
         """
         self.skip_packages = skip_packages or []
         self.concurrent = concurrent
         self.max_workers = max_workers
         self.timeout = timeout
+        self.max_version = version.parse(max_version) if max_version else None
 
     def get_outdated_packages(self) -> List[Dict]:
         """Get a list of outdated packages."""
@@ -45,7 +47,7 @@ class PipUpgrader:
             print("Error parsing pip output")
             return []
 
-    def upgrade_package(self, package: Dict) -> Tuple[str, bool, str]:
+    def upgrade_package(self, package: Dict, max_retries: int = 3) -> Tuple[str, bool, str]:
         """
         Upgrade a single package to its latest version.
         
@@ -53,25 +55,39 @@ class PipUpgrader:
             Tuple of (package_name, success, message)
         """
         package_name = package['name']
-        try:
-            start_time = time.time()
-            current_version = version.parse(package['version'])
-            latest_version = version.parse(package['latest_version'])
-            
-            # Check if the current version is too old
-            if latest_version.major - current_version.major > 1:
-                return (package_name, False, "Major version gap too large - manual upgrade recommended")
-            
-            result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", package_name],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            duration = time.time() - start_time
-            return (package_name, True, f"Upgraded in {duration:.1f}s")
-        except subprocess.CalledProcessError as e:
-            return (package_name, False, str(e))
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                start_time = time.time()
+                current_version = version.parse(package['version'])
+                latest_version = version.parse(package['latest_version'])
+                
+                # Check if the max_version is specified
+                if self.max_version and latest_version > self.max_version:
+                    return (package_name, False, f"Latest version {latest_version} exceeds maximum allowed version {self.max_version}")
+                
+                # Check the version gap
+                if latest_version.major - current_version.major > 1:
+                    return (package_name, False, "Major version gap too large - manual upgrade recommended")
+                
+                result = subprocess.run(
+                    [sys.executable, "-m", "pip", "install", "--upgrade", package_name],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    timeout=self.timeout
+                )
+                duration = time.time() - start_time
+                return (package_name, True, f"Upgraded in {duration:.1f}s")
+                
+            except subprocess.TimeoutExpired:
+                return (package_name, False, f"Upgrade timed out after {self.timeout}s")
+            except subprocess.CalledProcessError as e:
+                retry_count += 1
+                if retry_count == max_retries:
+                    return (package_name, False, f"Failed after {max_retries} retries: {str(e)}")
+                time.sleep(2 ** retry_count)  # Exponential backoff
 
     def upgrade_all_packages(self, outdated: List[Dict]) -> Tuple[List[str], List[Tuple[str, str]]]:
         """
@@ -160,7 +176,8 @@ def main():
         skip_packages=args.skip,
         concurrent=not args.no_concurrent,
         max_workers=args.workers,
-        timeout=300  
+        timeout=300,
+        max_version=args.max_version
     )
 
     logging.info("Checking for outdated packages...")

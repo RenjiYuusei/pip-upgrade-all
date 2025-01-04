@@ -1,11 +1,11 @@
-# pip-upgrade
+# pip-upgrade-all  
 
 Simple command line tool to upgrade all Python packages to the latest version.
 
 ## Install
 
 ```bash
-pip install pip-upgrade
+pip install pip-upgrade-all
 ```
 
 ## Usage
@@ -13,29 +13,33 @@ pip install pip-upgrade
 Run the basic command:
 
 ```bash
-pip-upgrade
+pip-upgrade-all
 ```
 
 Or use with options:
 
 ```bash
 # Skip some packages when upgrading
-pip-upgrade --skip package1 package2
+pip-upgrade-all --skip package1 package2
 
 # Disable concurrent upgrade
-pip-upgrade --no-concurrent
+pip-upgrade-all --no-concurrent
 
 # Specify the number of workers for concurrent upgrade
-pip-upgrade --workers 3
+pip-upgrade-all --workers 3
 
 # Specify the maximum version to upgrade to
-pip-upgrade --max-version 2.0.0
+pip-upgrade-all --max-version 2.0.0
 
 # Save upgrade report to a file
-pip-upgrade --report report.txt
+pip-upgrade-all --report report.txt
 
 # Save logs to a file
-pip-upgrade --log log.txt
+pip-upgrade-all --log log.txt
+
+# Upgrade all packages to the latest version
+pip-upgrade-all --timeout 300 # Upgrade timeout in seconds
+
 ```
 
 ## Features
@@ -63,6 +67,7 @@ pip-upgrade --log log.txt
 --max-version, -m  Maximum version to upgrade to (e.g. 2.0.0)
 --log, -l          Path to log file
 --report, -r       Path to save upgrade report
+--timeout, -t      Upgrade timeout in seconds (default: 300)
 ```
 
 ## License
