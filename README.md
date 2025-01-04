@@ -27,6 +27,9 @@ pip-upgrade --no-concurrent
 
 # Specify the number of workers for concurrent upgrade
 pip-upgrade --workers 3
+
+# Specify the maximum version to upgrade to
+pip-upgrade --max-version 2.0.0
 ```
 
 ## Features
@@ -41,7 +44,7 @@ pip-upgrade --workers 3
 
 ## Requirements
 
-- Python 3.6 or higher
+- Python 3.10 or higher
 - pip
 
 ## Command line parameters
@@ -50,6 +53,7 @@ pip-upgrade --workers 3
 --skip, -s         List of packages to skip when upgrading
 --no-concurrent    Disable concurrent upgrade
 --workers, -w      Number of workers for concurrent upgrade (default: 5)
+--max-version, -m  Maximum version to upgrade to (e.g. 2.0.0)
 ```
 
 ## License

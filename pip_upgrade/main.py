@@ -8,7 +8,8 @@ from packaging import version
 import time
 
 class PipUpgrader:
-    def __init__(self, skip_packages: List[str] = None, concurrent: bool = True, max_workers: int = 5):
+    def __init__(self, skip_packages: List[str] = None, concurrent: bool = True, 
+                 max_workers: int = 5, timeout: int = 300):
         """
         Initialize PipUpgrader
         
@@ -16,10 +17,12 @@ class PipUpgrader:
             skip_packages: List of packages to skip during upgrade
             concurrent: Whether to use concurrent upgrades
             max_workers: Maximum number of concurrent upgrades
+            timeout: Timeout in seconds for each package upgrade
         """
         self.skip_packages = skip_packages or []
         self.concurrent = concurrent
         self.max_workers = max_workers
+        self.timeout = timeout
 
     def get_outdated_packages(self) -> List[Dict]:
         """Get a list of outdated packages."""
@@ -49,6 +52,13 @@ class PipUpgrader:
         package_name = package['name']
         try:
             start_time = time.time()
+            current_version = version.parse(package['version'])
+            latest_version = version.parse(package['latest_version'])
+            
+            # Check if the current version is too old
+            if latest_version.major - current_version.major > 1:
+                return (package_name, False, "Major version gap too large - manual upgrade recommended")
+            
             result = subprocess.run(
                 [sys.executable, "-m", "pip", "install", "--upgrade", package_name],
                 capture_output=True,
@@ -98,6 +108,7 @@ def parse_args():
     parser.add_argument("--skip", "-s", nargs="+", help="Packages to skip during upgrade")
     parser.add_argument("--no-concurrent", action="store_true", help="Disable concurrent upgrades")
     parser.add_argument("--workers", "-w", type=int, default=5, help="Number of concurrent workers")
+    parser.add_argument("--max-version", "-m", type=str, help="Maximum version to upgrade to (e.g. 2.0.0)")
     return parser.parse_args()
 
 def main():
