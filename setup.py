@@ -5,14 +5,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="pip-upgrade-all",
-    version="0.1.5",
+    version="0.1.6",
     packages=find_packages(),
     install_requires=[
         "packaging",
     ],
     entry_points={
         "console_scripts": [
-            "pip-upgrade=pip_upgrade.main:main",
+            "pip-upgrade-all=pip_upgrade.main:main",
         ],
     },
     author="Yuusei",
@@ -20,7 +20,7 @@ setup(
     description="A tool to upgrade all outdated Python packages to their latest versions",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/RenjiYuusei/pip-upgrade",
+    url="https://github.com/RenjiYuusei/pip-upgrade-all",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
