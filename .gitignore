@@ -1,2 +1,10 @@
 .cursorrules
 __pycache__
+build
+dist
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+pip_upgrade_all.egg-info

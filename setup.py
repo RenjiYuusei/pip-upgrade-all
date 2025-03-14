@@ -5,10 +5,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="pip-upgrade-all",
-    version="0.1.6",
+    version="0.4.0",
     packages=find_packages(),
     install_requires=[
         "packaging",
+        "colorama",
     ],
     entry_points={
         "console_scripts": [
